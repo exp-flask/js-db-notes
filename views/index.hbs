@@ -1,0 +1,112 @@
+<h1>Express.js</h1>
+
+<h2>PostgreSQL</h2>
+<p>
+    Main clients: 
+    <a href="https://github.com/brianc/node-postgres">node-postgres</a> 
+    and 
+    <a href="https://github.com/vitaly-t/pg-promise">pg-promise</a>
+</p>
+<p>pg-promise is built on top of node-postgres</p>
+<p>
+    If you want to use an ORM, I recommend TypeORM. 
+    Read more about the different JS db clients/drivers and ORMs 
+    <a href="https://www.prisma.io/dataguide/database-tools/top-nodejs-orms-query-builders-and-database-libraries">here</a>
+</p>
+<p>
+    We will use pg-promise. 
+    Documentation <a href="http://vitaly-t.github.io/pg-promise/index.html">here</a>
+</p>
+
+<h3>pg-promise</h3>
+<p><em>only hyperlinked functions will be explained for the sake of brevity</em></p>
+<a href="#dbone">db.one()</a> 
+<a href="#dbnone">db.none()</a>
+<a href="#dbany">db.any()</a>
+<a href="#dbmulti">db.multi()</a>
+<u>db.require()</u>
+<u>db.func()</u>
+<u>db.proc()</u>
+<u>db.many()</u> 
+<u>db.oneOrNone()</u> 
+<u>db.manyOrNone()</u>
+
+<p>install: <code>npm i pg-promise</code></p>
+<p>import:</p>
+<!--?prettify lang=javascript linenums=false?-->
+<pre class="prettyprint">
+var pgp = require('pg-promise')(/* options */)
+var db = pgp('postgres://username:password@host:port/database')
+</pre>
+<p>connection credentials in pgp(...) can also be an object instead of a string, the string used to connect to the local sample db here can be found at /routes/index.js line 4</p>
+
+<p class="queryFunc" id="dbone">db.one(...) example:</p>
+<!--?prettify lang=javascript linenums=false?-->
+<pre class="prettyprint">
+let dbOutput = {};
+try {
+    let data = await db.one('SELECT phone, address FROM address LIMIT 1');
+    console.log('DATA:', data)
+    dbOutput.selectOne = JSON.stringify(data);
+} catch(error) {
+    console.log('ERROR:', error)
+}
+</pre>
+dbOutput:
+<!--?prettify lang=json linenums=false?-->
+<pre class="prettyprint">{{dbOut.selectOne}}</pre>
+<p>db.one(...) <b>expects one row</b> returned from the query, otherwise it will error out</p>
+<p><em>SELECT COUNT(*) FROM address</em> (output: { count: 603 }) would also work because it returns only one row of data</p>
+
+
+<p class="queryFunc" id="dbnone">db.none(...) example:</p>
+<!--?prettify lang=javascript linenums=false?-->
+<pre class="prettyprint">
+await db.none('UPDATE users SET user_name = 'Bob' WHERE user_id = 1;');
+</pre>
+db.none(...) <b>expects no records/rows to be returned</b> and it resolves with null, otherwise if any data is returned, it rejects with QueryResultError:<br>
+.message = No return data was expected.
+<br>
+.code = queryResultErrorCode.notEmpty
+
+<p class="queryFunc" id="dbany">db.any(...) example:</p>
+<!--?prettify lang=javascript linenums=false?-->
+<pre class="prettyprint">
+// Get data from 2 tables in a single request:
+const users = await db.any('SELECT * FROM users;');
+</pre>
+Executes a query that can <b>return any number of rows</b>. This is simply a shorter alias for method manyOrNone.
+<br>
+When receiving a multi-query result, only the last result is processed, ignoring the rest.
+<br>
+When no rows are returned, it resolves with an empty array.
+<br>
+When 1 or more rows are returned, it resolves with the array of rows.
+
+
+<p class="queryFunc" id="dbmulti">db.multi(...) example:</p>
+<!--?prettify lang=javascript linenums=false?-->
+<pre class="prettyprint">
+// Get data from 2 tables in a single request:
+const [users, products] = await db.multi('SELECT * FROM users;SELECT * FROM products');
+</pre>
+Executes a multi-query string, without any expectation for the return data, and resolves with an array of arrays of rows when successful.
+
+
+
+
+<!-- interactive code section
+<p><b><em>interactive db.one(&lt;input&gt;)</em></b></p>
+<p>&lt;input&gt; will be replaced with the text you input below:</p>
+<textarea id="dboneInput"></textarea>
+<div><button onclick="dbone()">Run</button></div>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+    function dbone() {
+        console.log(document.getElementById('dboneInput').value)
+        axios.get('/test').then(resp => {
+            console.log(resp);
+        })
+    }
+</script>
+-->
